@@ -7,16 +7,16 @@ require 'spec/example/example_group'
 # Monkey-patch RSpec Example Group so that we can track whether an
 # example already failed or not in an after(:each) block
 #
-# Useful to only capture Selenium screenshots when a test fails  
+# Useful to only capture Selenium screenshots when a test fails
 #
-# * Changed execution_error to be an instance variable (in lieu of 
+# * Changed execution_error to be an instance variable (in lieu of
 #   a local variable).
 #
-# * Introduced an unique id (example_uid) that is the same for 
-#   a real Example (passed in after(:each) when screenshot is 
-#   taken) as well as the corresponding ExampleProxy 
+# * Introduced an unique id (example_uid) that is the same for
+#   a real Example (passed in after(:each) when screenshot is
+#   taken) as well as the corresponding ExampleProxy
 #   (passed to the HTML formatter). This unique id gives us
-#   a way to correlate file names between generation and 
+#   a way to correlate file names between generation and
 #   reporting time.
 #
 module Spec
@@ -28,15 +28,17 @@ module Spec
       remove_method :execute
       def execute(run_options, instance_variables) # :nodoc:
         @_proxy.options[:actual_example] = self
-        
+
         run_options.reporter.example_started(@_proxy)
         set_instance_variables_from_hash(instance_variables)
-        
+
         @execution_error = nil
         Timeout.timeout(run_options.timeout) do
           begin
             before_each_example
             instance_eval(&@_implementation)
+          rescue Timeout::Error => e
+            @execution_error ||= e
           rescue Interrupt
             exit 1
           rescue Exception => e
@@ -44,6 +46,8 @@ module Spec
           end
           begin
             after_each_example
+          rescue Timeout::Error => e
+            @execution_error ||= e
           rescue Interrupt
             exit 1
           rescue Exception => e
@@ -59,7 +63,7 @@ module Spec
         case execution_error
         when nil
           false
-        when Spec::Example::ExamplePendingError, 
+        when Spec::Example::ExamplePendingError,
              Spec::Example::PendingExampleFixedError,
              Spec::Example::NoDescriptionError
           false
@@ -69,22 +73,22 @@ module Spec
       end
 
       def reporting_uid
-        # backtrace is not reliable anymore using the implementation proc          
+        # backtrace is not reliable anymore using the implementation proc
         Digest::MD5.hexdigest @_implementation.inspect
       end
 
       def pending_for_browsers(*browser_regexps, &block)
         actual_browser = selenium_driver.browser_string
-        match_browser_regexps = browser_regexps.inject(false) do |match, regexp| 
+        match_browser_regexps = browser_regexps.inject(false) do |match, regexp|
           match ||= actual_browser =~ Regexp.new(regexp.source, Regexp::IGNORECASE)
         end
         if match_browser_regexps
           pending "#{actual_browser.gsub(/\*/, '').capitalize} does not support this feature yet"
-        else 
+        else
           yield
         end
       end
- 
+
     end
 
     class ExampleProxy
