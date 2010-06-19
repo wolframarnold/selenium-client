@@ -29,7 +29,7 @@ module Selenium
           if File.exists? @file_path_strategy.file_path_for_html_capture(example)
             html << toggable_section(dom_id, :id => "snapshot", :url=> snapshot_url, :name => "Dynamic HTML Snapshot")
           end
-          if File.exists? @file_path_strategy.file_path_for_remote_control_logs(example)          
+          if File.exists? @file_path_strategy.file_path_for_remote_control_logs(example)
             html << toggable_section(dom_id, :id => "rc_logs", :url=> remote_control_logs_url, :name => "Remote Control Logs")
           end
           if File.exists? @file_path_strategy.file_path_for_page_screenshot(example)
@@ -119,5 +119,20 @@ module Selenium
       end      
     end
     
+
+    # Tweaks raised Exceptions to mask noisy (unneeded) parts of the backtrace
+    class SeleniumQuietBacktraceTweaker < Spec::Runner::QuietBacktraceTweaker
+      unless defined?(SELENIUM_IGNORE_PATTERNS)
+        SELENIUM_IGNORE_PATTERNS = spec_files + [
+          /selenium-client/,
+          /selenium\/client/,
+        ]
+      end
+
+      def ignored_patterns
+        super + SELENIUM_IGNORE_PATTERNS
+      end
+    end
+
   end
 end

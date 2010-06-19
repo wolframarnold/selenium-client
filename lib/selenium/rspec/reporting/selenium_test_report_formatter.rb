@@ -49,6 +49,7 @@ module Selenium
       def example_failed(example, counter, failure)        
         old_output = @output
         @output = StringIO.new
+        SeleniumQuietBacktraceTweaker.new.tweak_backtrace(failure.exception)
         super
         
         result = @output.string
