@@ -24,13 +24,14 @@ module Selenium
           page_screenshot_url = @file_path_strategy.relative_file_path_for_page_screenshot(example)
           snapshot_url = @file_path_strategy.relative_file_path_for_html_capture(example)
           remote_control_logs_url = @file_path_strategy.relative_file_path_for_remote_control_logs(example)
+          remote_control_logs_path = @file_path_strategy.file_path_for_remote_control_logs(example)
 
           html = ""
           if File.exists? @file_path_strategy.file_path_for_html_capture(example)
             html << toggable_section(dom_id, :id => "snapshot", :url=> snapshot_url, :name => "Dynamic HTML Snapshot")
           end
-          if File.exists? @file_path_strategy.file_path_for_remote_control_logs(example)
-            html << toggable_section(dom_id, :id => "rc_logs", :url=> remote_control_logs_url, :name => "Remote Control Logs")
+          if File.exists? remote_control_logs_path
+            html << toggable_inline_section(dom_id, :id => "rc_logs", :url => remote_control_logs_url, :path=> remote_control_logs_path, :name => "Remote Control Logs")
           end
           if File.exists? @file_path_strategy.file_path_for_page_screenshot(example)
             html << toggable_image_section(dom_id, :id => "page_screenshot", :name => "Page Screenshot", :url => page_screenshot_url)
@@ -92,6 +93,22 @@ module Selenium
           <div id="#{dom_id}_#{options[:id]}" class="dyn-source">
             <a href="#{options[:url]}">Full screen</a><br/><br/>
             <iframe src="#{options[:url]}" width="100%" height="600px" ></iframe>
+          </div>
+
+          EOS
+        end
+
+        def toggable_inline_section(dom_id, options)
+          <<-EOS
+
+          <div>[
+            <a id="#{dom_id}_#{options[:id]}_link"
+               href=\"javascript:toggleVisilibility('#{dom_id}_#{options[:id]}', '#{options[:name]}')\">Show #{options[:name]}</a>
+          ]</div>
+          <br/><br/>
+          <div id="#{dom_id}_#{options[:id]}" class="dyn-source">
+            <a href="#{options[:url]}">Full screen</a><br/><br/>
+            <pre>#{File.open(options[:path]).read}</pre>
           </div>
 
           EOS
